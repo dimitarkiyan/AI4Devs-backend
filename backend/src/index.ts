@@ -3,8 +3,10 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import candidateRoutes from './routes/candidateRoutes';
+import candidatesRoutes from './routes/candidatesRoutes';
 import { uploadFile } from './application/services/fileUploadService';
 import cors from 'cors';
+import positionRoutes from './routes/positionRoutes';
 
 // Extender la interfaz Request para incluir prisma
 declare global {
@@ -36,8 +38,14 @@ app.use(cors({
   credentials: true
 }));
 
+// Import and use candidatesRoutes
+app.use('/candidates', candidatesRoutes);
+
 // Import and use candidateRoutes
-app.use('/candidates', candidateRoutes);
+app.use('/candidate', candidateRoutes);
+
+// Import and use positionRoutes
+app.use(positionRoutes);
 
 // Route for file uploads
 app.post('/upload', uploadFile);

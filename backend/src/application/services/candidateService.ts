@@ -63,3 +63,47 @@ export const findCandidateById = async (id: number): Promise<Candidate | null> =
         throw new Error('Error al recuperar el candidato');
     }
 };
+
+interface CandidateProgress {
+    fullName: string;
+    currentInterviewStep: string;
+    averageScore: number | null;
+}
+
+export const getCandidatesByPosition = async (positionId: number): Promise<CandidateProgress[]> => {
+    try {
+        const candidates = await Candidate.findByPosition(positionId);
+        return candidates.map(candidate => ({
+            fullName: `${candidate.firstName} ${candidate.lastName}`,
+            currentInterviewStep: String(candidate.applications[0]?.currentInterviewStep || 'Not started'),
+            averageScore: calculateAverageScore(candidate.applications[0]?.interviews || [])
+        }));
+    } catch (error) {
+        console.error('Error fetching candidates by position:', error);
+        throw new Error('Error retrieving candidates for position');
+    }
+};
+
+function calculateAverageScore(interviews: any[]): number | null {
+    if (!interviews.length) return null;
+    const scores = interviews.filter(interview => interview.score !== null).map(interview => interview.score);
+    if (!scores.length) return null;
+    return scores.reduce((sum, score) => sum + score, 0) / scores.length;
+}
+
+export const updateCandidateInterviewStep = async (id: number) => {
+    const candidate = await Candidate.findOne(id);
+    if (!candidate) {
+        throw new Error('Candidate not found');
+    }
+
+    // Assuming currentInterviewStep is a number and we want to increment it
+    const currentStep = candidate.applications[0]?.currentInterviewStep || 0;
+    const newStep = Math.min(currentStep + 1, 3); // Increment and cap at 3
+
+    // Update the candidate's interview step
+    candidate.applications[0].currentInterviewStep = newStep;
+
+    // Save the updated candidate
+    return await candidate.save();
+};

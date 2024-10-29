@@ -71,7 +71,8 @@ export class Candidate {
             candidateData.resumes = {
                 create: this.resumes.map(resume => ({
                     filePath: resume.filePath,
-                    fileType: resume.fileType
+                    fileType: resume.fileType,
+                    uploadDate: resume.uploadDate
                 }))
             };
         }
@@ -81,7 +82,6 @@ export class Candidate {
             candidateData.applications = {
                 create: this.applications.map(app => ({
                     positionId: app.positionId,
-                    candidateId: app.candidateId,
                     applicationDate: app.applicationDate,
                     currentInterviewStep: app.currentInterviewStep,
                     notes: app.notes,
@@ -159,5 +159,33 @@ export class Candidate {
         });
         if (!data) return null;
         return new Candidate(data);
+    }
+
+    static async findByPosition(positionId: number): Promise<Candidate[]> {
+        const candidates = await prisma.candidate.findMany({
+            where: {
+                applications: {
+                    some: {
+                        positionId: positionId
+                    }
+                }
+            },
+            include: {
+                applications: {
+                    where: {
+                        positionId: positionId
+                    },
+                    include: {
+                        interviews: {
+                            select: {
+                                score: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        return candidates.map(data => new Candidate(data));
     }
 }
